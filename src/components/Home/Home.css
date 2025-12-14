@@ -1,0 +1,521 @@
+/* Home Screen Styles */
+
+.home-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: fade-in 0.3s ease;
+}
+
+/* Header Section */
+.home-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.greeting-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.greeting-text {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.greeting-sub {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Month Selector */
+.month-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px;
+    background: var(--secondary-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0, 188, 212, 0.15);
+}
+
+.month-nav-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--tertiary-bg);
+    color: var(--text-secondary);
+    transition: all var(--transition-normal);
+}
+
+.month-nav-btn:hover {
+    background: rgba(0, 188, 212, 0.2);
+    color: var(--sky-blue);
+    box-shadow: var(--glow-sm);
+}
+
+.month-nav-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.month-display {
+    text-align: center;
+    min-width: 160px;
+}
+
+.month-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.month-year {
+    font-size: 0.875rem;
+    color: var(--sky-blue);
+}
+
+.today-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--sky-blue);
+    background: rgba(0, 188, 212, 0.1);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(0, 188, 212, 0.3);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.today-btn:hover {
+    background: rgba(0, 188, 212, 0.2);
+    box-shadow: var(--glow-sm);
+}
+
+/* Summary Cards */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.summary-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all var(--transition-normal);
+}
+
+.summary-card:hover {
+    border-color: rgba(0, 188, 212, 0.3);
+    box-shadow: var(--glow-sm);
+}
+
+.summary-card.income {
+    border-left: 3px solid var(--success);
+}
+
+.summary-card.expense {
+    border-left: 3px solid var(--danger);
+}
+
+.summary-card.savings {
+    border-left: 3px solid var(--sky-blue);
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.summary-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.summary-card.income .summary-amount {
+    color: var(--success);
+}
+
+.summary-card.expense .summary-amount {
+    color: var(--danger);
+}
+
+.summary-card.savings .summary-amount {
+    color: var(--sky-blue);
+}
+
+/* =========================================
+   VERTICAL CALENDAR STYLES
+   ========================================= */
+
+.vertical-calendar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.calendar-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.calendar-list-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.calendar-vertical-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Day Card */
+.vertical-day-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+.vertical-day-card:hover {
+    border-color: rgba(0, 188, 212, 0.2);
+}
+
+.vertical-day-card.today {
+    border: 2px solid var(--sky-blue);
+    box-shadow: var(--glow-sm);
+    background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, var(--card-bg) 100%);
+}
+
+.vertical-day-card.has-transactions {
+    border-left: 3px solid var(--sky-blue);
+}
+
+.vertical-day-card.expanded {
+    border-color: var(--sky-blue);
+}
+
+/* Day Header */
+.day-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.day-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.day-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 100px;
+}
+
+.day-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 36px;
+}
+
+.vertical-day-card.today .day-number {
+    color: var(--sky-blue);
+}
+
+.day-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.day-name {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.today-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: var(--sky-blue);
+    color: var(--primary-bg);
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.day-summary {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-right: 12px;
+}
+
+.day-income {
+    color: var(--success);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.day-expense {
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.no-transactions {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Quick Add Button */
+.quick-add-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tertiary-bg);
+    border-radius: var(--radius-full);
+    color: var(--text-muted);
+    transition: all var(--transition-normal);
+}
+
+.quick-add-btn:hover {
+    background: var(--sky-blue);
+    color: var(--primary-bg);
+    box-shadow: var(--glow-sm);
+}
+
+.quick-add-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Quick Add Form */
+.quick-add-form {
+    padding: 16px;
+    background: var(--secondary-bg);
+    border-top: 1px solid var(--tertiary-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: slide-up 0.2s ease;
+}
+
+.quick-add-row {
+    display: flex;
+    gap: 8px;
+}
+
+.quick-add-input {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    background: var(--card-bg);
+    border: 1px solid var(--tertiary-bg);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+}
+
+.quick-add-input:focus {
+    outline: none;
+    border-color: var(--sky-blue);
+}
+
+.quick-add-select {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    background: var(--card-bg);
+    border: 1px solid var(--tertiary-bg);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.quick-add-select:focus {
+    outline: none;
+    border-color: var(--sky-blue);
+}
+
+.quick-add-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.quick-add-cancel {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    background: var(--tertiary-bg);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+}
+
+.quick-add-cancel:hover {
+    background: rgba(255, 82, 82, 0.2);
+    color: var(--danger);
+}
+
+.quick-add-save {
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--sky-blue);
+    color: var(--primary-bg);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+}
+
+.quick-add-save:hover:not(:disabled) {
+    box-shadow: var(--glow-sm);
+}
+
+.quick-add-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Day Transactions */
+.day-transactions {
+    padding: 8px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--tertiary-bg);
+    animation: slide-up 0.2s ease;
+}
+
+.transaction-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--secondary-bg);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.transaction-row:hover {
+    background: rgba(0, 188, 212, 0.05);
+}
+
+.tx-icon {
+    font-size: 1.25rem;
+}
+
+.tx-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tx-desc {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tx-category {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+.tx-amount {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tx-amount.income {
+    color: var(--success);
+}
+
+.tx-amount.expense {
+    color: var(--danger);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.empty-sub {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Utility */
+.flex-1 {
+    flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-amount {
+        font-size: 1rem;
+    }
+
+    .day-summary {
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-end;
+    }
+
+    .day-income,
+    .day-expense {
+        font-size: 0.8rem;
+    }
+
+    .quick-add-row {
+        flex-direction: column;
+    }
+}
