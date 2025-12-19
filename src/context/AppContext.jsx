@@ -233,11 +233,33 @@ export function AppProvider({ children }) {
         );
     };
 
+    // Bulk Import Transactions
+    const importTransactions = (newTransactions) => {
+        setTransactions(prev => [...newTransactions, ...prev]);
+    };
+
     // Update budget
     const updateBudget = (categoryId, newLimit) => {
         setBudgets(prev =>
             prev.map(b => b.id === categoryId ? { ...b, limit: newLimit } : b)
         );
+    };
+
+    // Add budget
+    const addBudget = (categoryId, categoryName) => {
+        const newBudget = {
+            id: categoryId || Date.now().toString(),
+            category: categoryName.toLowerCase().replace(/\s+/g, '_'),
+            name: categoryName,
+            limit: 5000
+        };
+        setBudgets(prev => [...prev, newBudget]);
+        return newBudget;
+    };
+
+    // Delete budget
+    const deleteBudget = (budgetId) => {
+        setBudgets(prev => prev.filter(b => b.id !== budgetId));
     };
 
     // Navigate months
@@ -309,6 +331,7 @@ export function AppProvider({ children }) {
         addTransaction,
         deleteTransaction,
         updateTransaction,
+        importTransactions,
         updateBudget,
         goToPreviousMonth,
         goToNextMonth,
@@ -323,6 +346,10 @@ export function AppProvider({ children }) {
         // Payment mode actions
         addPaymentMode,
         deletePaymentMode,
+
+        // Budget actions
+        addBudget,
+        deleteBudget,
     };
 
     return (

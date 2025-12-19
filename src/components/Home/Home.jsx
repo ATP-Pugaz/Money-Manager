@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import TransactionModal from '../Modals/TransactionModal';
 import {
     getGreeting,
     formatCurrency,
@@ -43,23 +44,16 @@ export default function Home() {
         getMonthTransactions,
         getDateTransactions,
         getMonthTotals,
-        getCategorySpending,
-        budgets,
-        setActiveTab,
-        addTransaction,
         categories
     } = useApp();
 
     const [expandedDay, setExpandedDay] = useState(null);
-    const [showQuickAdd, setShowQuickAdd] = useState(null);
-    const [quickAddData, setQuickAddData] = useState({ type: 'expense', amount: '', description: '', category: 'food' });
-
-    // Get filtered categories based on selected type
-    const filteredCategories = categories?.filter(c => c.type === quickAddData.type) || [];
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalDate, setModalDate] = useState(new Date().toISOString());
 
     const monthTransactions = getMonthTransactions();
     const totals = getMonthTotals();
-    const categorySpending = getCategorySpending();
 
     const today = new Date();
     const isCurrentMonth = selectedMonth === today.getMonth() && selectedYear === today.getFullYear();
@@ -80,26 +74,26 @@ export default function Home() {
         return { transactions: dayTransactions, income, expense, count: dayTransactions.length };
     };
 
-    // Handle quick add
-    const handleQuickAdd = (day) => {
-        if (!quickAddData.amount || !quickAddData.description) return;
-
-        const date = new Date(selectedYear, selectedMonth, day, 12, 0, 0);
-        addTransaction({
-            type: quickAddData.type,
-            amount: parseFloat(quickAddData.amount),
-            description: quickAddData.description,
-            category: quickAddData.category,
-            date: date.toISOString()
-        });
-
-        setQuickAddData({ type: 'expense', amount: '', description: '', category: 'other' });
-        setShowQuickAdd(null);
+    const openAddModal = (day = null) => {
+        if (day) {
+            // Set date to the selected day at current time or noon
+            const date = new Date(selectedYear, selectedMonth, day, 12, 0, 0);
+            setModalDate(date.toISOString());
+        } else {
+            // Default to today
+            setModalDate(new Date().toISOString());
+        }
+        setIsModalOpen(true);
     };
 
     // Generate days array - only show up to today for current month
     const maxDay = isCurrentMonth ? today.getDate() : daysInMonth;
-    const daysArray = Array.from({ length: maxDay }, (_, i) => maxDay - i);
+    // Filter days: show if it has transactions OR if it's today
+    const daysArray = Array.from({ length: maxDay }, (_, i) => maxDay - i).filter(day => {
+        const { count } = getDayData(day);
+        const date = new Date(selectedYear, selectedMonth, day);
+        return count > 0 || isToday(date);
+    });
 
     return (
         <div className="home-container">
@@ -142,7 +136,9 @@ export default function Home() {
                 </div>
                 <div className="summary-card savings">
                     <div className="summary-label">Balance</div>
-                    <div className="summary-amount">{formatCurrency(totals.savings)}</div>
+                    <div className="summary-amount">
+                        {totals.savings < 0 ? '-' : ''}{formatCurrency(Math.abs(totals.savings))}
+                    </div>
                 </div>
             </div>
 
@@ -189,79 +185,19 @@ export default function Home() {
                                             <span className="no-transactions">No transactions</span>
                                         )}
                                     </div>
-                                    <button
-                                        className="quick-add-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowQuickAdd(showQuickAdd === day ? null : day);
-                                            setExpandedDay(day);
-                                        }}
-                                        title="Add transaction"
-                                    >
-                                        <PlusIcon />
-                                    </button>
+                                    {isTodayDate && (
+                                        <button
+                                            className="quick-add-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openAddModal(day);
+                                            }}
+                                            title="Add transaction"
+                                        >
+                                            <PlusIcon />
+                                        </button>
+                                    )}
                                 </div>
-
-                                {/* Quick Add Form */}
-                                {showQuickAdd === day && (
-                                    <div className="quick-add-form">
-                                        <div className="quick-add-row">
-                                            <select
-                                                value={quickAddData.type}
-                                                onChange={(e) => setQuickAddData({ ...quickAddData, type: e.target.value })}
-                                                className="quick-add-select"
-                                            >
-                                                <option value="expense">Expense</option>
-                                                <option value="income">Income</option>
-                                            </select>
-                                            <input
-                                                type="number"
-                                                placeholder="₹ Amount"
-                                                value={quickAddData.amount}
-                                                onChange={(e) => setQuickAddData({ ...quickAddData, amount: e.target.value })}
-                                                className="quick-add-input"
-                                            />
-                                        </div>
-                                        <div className="quick-add-row">
-                                            <input
-                                                type="text"
-                                                placeholder="Description"
-                                                value={quickAddData.description}
-                                                onChange={(e) => setQuickAddData({ ...quickAddData, description: e.target.value })}
-                                                className="quick-add-input flex-1"
-                                            />
-                                            <select
-                                                value={quickAddData.category}
-                                                onChange={(e) => setQuickAddData({ ...quickAddData, category: e.target.value })}
-                                                className="quick-add-select"
-                                            >
-                                                {filteredCategories.map(cat => (
-                                                    <option key={cat.id} value={cat.name.toLowerCase().replace(/\s+/g, '_')}>
-                                                        {cat.icon} {cat.name}
-                                                    </option>
-                                                ))}
-                                                {filteredCategories.length === 0 && (
-                                                    <option value="other">📦 Other</option>
-                                                )}
-                                            </select>
-                                        </div>
-                                        <div className="quick-add-actions">
-                                            <button
-                                                className="quick-add-cancel"
-                                                onClick={() => setShowQuickAdd(null)}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                className="quick-add-save"
-                                                onClick={() => handleQuickAdd(day)}
-                                                disabled={!quickAddData.amount || !quickAddData.description}
-                                            >
-                                                Add
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Transactions List */}
                                 {isExpanded && dayData.count > 0 && (
@@ -289,10 +225,25 @@ export default function Home() {
                     <div className="empty-state">
                         <div className="empty-icon">📝</div>
                         <p className="empty-text">No transactions this month</p>
-                        <p className="empty-sub">Tap the + button on any day to add your first transaction</p>
+                        <p className="empty-sub">Tap the + button to add your first transaction</p>
+                        <button className="fab-button empty-fab" onClick={() => openAddModal()}>
+                            <PlusIcon />
+                        </button>
                     </div>
                 )}
             </div>
+
+            {/* Floating Action Button (FAB) */}
+            <button className="fab-button" onClick={() => openAddModal()}>
+                <PlusIcon />
+            </button>
+
+            {/* Transaction Modal */}
+            <TransactionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                initialData={{ date: modalDate }}
+            />
         </div>
     );
 }

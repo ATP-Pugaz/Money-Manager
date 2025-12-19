@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navigation from './components/Navigation/Navigation';
 import Home from './components/Home/Home';
@@ -14,7 +15,13 @@ import './components/Transactions/Transactions.css';
 import './components/Settings/Settings.css';
 
 function AppContent() {
-  const { activeTab } = useApp();
+  const { activeTab, settings } = useApp();
+
+  // Apply theme to document body
+  useEffect(() => {
+    const theme = settings?.theme || 'dark';
+    document.body.setAttribute('data-theme', theme);
+  }, [settings?.theme]);
 
   const renderTab = () => {
     switch (activeTab) {

@@ -230,7 +230,9 @@ export default function Analytics() {
                     <div className="overview-label">Total Expenses</div>
                 </div>
                 <div className="overview-card">
-                    <div className="overview-value savings">{formatCurrency(totals.savings)}</div>
+                    <div className={`overview-value ${totals.savings < 0 ? 'negative-balance' : 'savings'}`}>
+                        {totals.savings < 0 ? '-' : ''}{formatCurrency(Math.abs(totals.savings))}
+                    </div>
                     <div className="overview-label">Net Savings</div>
                 </div>
                 <div className="overview-card">
@@ -249,8 +251,21 @@ export default function Analytics() {
                     <div className="pie-chart-container">
                         <div className="pie-chart-wrapper">
                             <svg viewBox="0 0 200 200" className="pie-chart-svg">
-                                {pieSegments.map((seg, i) =>
-                                    createPieSlice(seg.startAngle, seg.endAngle, seg.color, i)
+                                {pieSegments.length === 1 ? (
+                                    // Single item - Full Circle
+                                    <circle
+                                        cx="100"
+                                        cy="100"
+                                        r="80"
+                                        fill={pieSegments[0].color}
+                                        stroke="var(--primary-bg)"
+                                        strokeWidth="2"
+                                    />
+                                ) : (
+                                    // Multiple items - Arcs
+                                    pieSegments.map((seg, i) =>
+                                        createPieSlice(seg.startAngle, seg.endAngle, seg.color, i)
+                                    )
                                 )}
                                 {/* Center circle for donut effect */}
                                 <circle cx="100" cy="100" r="45" fill="var(--card-bg)" />

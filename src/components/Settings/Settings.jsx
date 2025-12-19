@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/helpers';
 import './Settings.css';
@@ -21,33 +22,13 @@ export default function Settings() {
         paymentModes,
         addPaymentMode,
         deletePaymentMode,
-        addTransaction
+        addTransaction,
+        importTransactions,
+        addBudget,
+        deleteBudget
     } = useApp();
 
-    // Theme state
-    const [theme, setTheme] = useState(() => {
-        return localStorage.getItem('mm_theme') || 'dark';
-    });
 
-    // Linked Accounts State
-    const [linkedAccounts, setLinkedAccounts] = useState(() => {
-        const saved = localStorage.getItem('mm_linked_accounts');
-        return saved ? JSON.parse(saved) : {
-            upi: { linked: false, id: '' },
-            bank: { linked: false, account: '' }
-        };
-    });
-
-    // Apply theme on mount and change
-    useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('mm_theme', theme);
-    }, [theme]);
-
-    // Persist linked accounts
-    useEffect(() => {
-        localStorage.setItem('mm_linked_accounts', JSON.stringify(linkedAccounts));
-    }, [linkedAccounts]);
 
     // Category modal state
     const [showAddCategory, setShowAddCategory] = useState(false);
@@ -63,6 +44,10 @@ export default function Settings() {
 
     // Expanded category for viewing subcategories
     const [expandedCategory, setExpandedCategory] = useState(null);
+
+    // Budget modal state
+    const [showAddBudget, setShowAddBudget] = useState(false);
+    const [newBudget, setNewBudget] = useState({ categoryName: '', limit: 5000 });
 
     // File input ref for import
     const fileInputRef = useRef(null);
@@ -95,34 +80,76 @@ export default function Settings() {
 
     // Toggle theme
     const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+        setSettings(prev => ({
+            ...prev,
+            theme: prev.theme === 'dark' ? 'light' : 'dark'
+        }));
     };
 
-    // Export as Excel (CSV format)
-    const handleExportExcel = () => {
-        const headers = ['Date', 'Type', 'Category', 'Description', 'Amount', 'Payment Mode', 'Status'];
-        const rows = transactions.map(t => [
-            new Date(t.date).toLocaleDateString('en-IN'),
-            t.type,
-            t.category,
-            t.description,
-            t.amount,
-            t.paymentMode || 'N/A',
-            t.status
-        ]);
+    // Export as Excel (Multi-sheet)
+    const handleExportExcel = async () => {
+        try {
+            // Prepare Data for Income Sheet
+            const incomeData = transactions
+                .filter(t => t.type === 'income')
+                .map(t => ({
+                    Date: new Date(t.date).toLocaleDateString('en-IN'),
+                    Amount: t.amount,
+                    Category: t.category,
+                    'Sub Category': t.subcategory || '',
+                    Description: t.description,
+                    'Payment Mode': t.paymentMode || '',
+                    Status: t.status
+                }));
 
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-        ].join('\n');
+            // Prepare Data for Expense Sheet
+            const expenseData = transactions
+                .filter(t => t.type === 'expense')
+                .map(t => ({
+                    Date: new Date(t.date).toLocaleDateString('en-IN'),
+                    Amount: t.amount,
+                    Category: t.category,
+                    'Sub Category': t.subcategory || '',
+                    Description: t.description,
+                    'Payment Mode': t.paymentMode || '',
+                    Status: t.status
+                }));
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `money-manager-${new Date().toLocaleDateString('en-IN').replace(/\//g, '-')}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+            // Create Workbook
+            const wb = XLSX.utils.book_new();
+            const incomeSheet = XLSX.utils.json_to_sheet(incomeData);
+            const expenseSheet = XLSX.utils.json_to_sheet(expenseData);
+
+            XLSX.utils.book_append_sheet(wb, incomeSheet, "Income");
+            XLSX.utils.book_append_sheet(wb, expenseSheet, "Expenses");
+
+            // File Name
+            const fileName = `MoneyManager_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+            // Use File System Access API if available
+            if (window.showSaveFilePicker) {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{
+                        description: 'Excel File',
+                        accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+                    }]
+                });
+                const writable = await handle.createWritable();
+                const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                await writable.write(buffer);
+                await writable.close();
+            } else {
+                // Fallback for browsers without File System Access API
+                XLSX.writeFile(wb, fileName);
+            }
+            alert('✅ Export successful!');
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Export Error:', error);
+                alert('❌ Export failed. Please try again.');
+            }
+        }
     };
 
     // Import Excel/CSV
@@ -137,68 +164,111 @@ export default function Settings() {
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
-                const text = event.target?.result;
-                const lines = text.split('\n');
-                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '').toLowerCase());
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
 
-                let imported = 0;
-                for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
+                let newTransactions = [];
+                let importedCount = 0;
 
-                    const values = lines[i].match(/(".*?"|[^",]+)/g)?.map(v => v.replace(/"/g, '').trim()) || [];
-                    if (values.length < 5) continue;
+                const parseSheet = (sheetName, type) => {
+                    const sheet = workbook.Sheets[sheetName];
+                    if (!sheet) return;
 
-                    const dateIdx = headers.indexOf('date');
-                    const typeIdx = headers.indexOf('type');
-                    const categoryIdx = headers.indexOf('category');
-                    const descIdx = headers.indexOf('description');
-                    const amountIdx = headers.indexOf('amount');
-                    const paymentIdx = headers.indexOf('payment mode');
+                    const rows = XLSX.utils.sheet_to_json(sheet);
+                    rows.forEach(row => {
+                        if (!row.Date || !row.Amount) return;
 
-                    const dateStr = values[dateIdx] || new Date().toLocaleDateString('en-IN');
-                    const dateParts = dateStr.split('/');
-                    const date = dateParts.length === 3
-                        ? new Date(dateParts[2], dateParts[1] - 1, dateParts[0])
-                        : new Date(dateStr);
+                        // Parse Date strictly
+                        let dateStr = row.Date; // Expected DD/MM/YYYY or YYYY-MM-DD
+                        let dateObj = new Date(); // Default to now if fail
 
-                    addTransaction({
-                        type: values[typeIdx] || 'expense',
-                        category: values[categoryIdx] || 'other',
-                        description: values[descIdx] || 'Imported',
-                        amount: parseFloat(values[amountIdx]) || 0,
-                        paymentMode: values[paymentIdx] || 'cash',
-                        date: date.toISOString(),
-                        source: 'import'
+                        if (typeof dateStr === 'string') {
+                            if (dateStr.includes('/')) {
+                                const [d, m, y] = dateStr.split('/');
+                                dateObj = new Date(y, m - 1, d);
+                            } else {
+                                dateObj = new Date(dateStr);
+                            }
+                        } else if (typeof dateStr === 'number') {
+                            // Excel serial date
+                            dateObj = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+                        }
+
+                        // Validate date
+                        if (isNaN(dateObj.getTime())) dateObj = new Date();
+
+                        // Construct transaction
+                        const tx = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                            type: type,
+                            amount: parseFloat(row.Amount) || 0,
+                            category: (row.Category || 'other').toLowerCase().replace(/\s+/g, '_'),
+                            subcategory: row['Sub Category'] || '',
+                            description: row.Description || 'Imported Transaction',
+                            paymentMode: (row['Payment Mode'] || 'cash').toLowerCase().replace(/\s+/g, '_'),
+                            date: dateObj.toISOString(),
+                            status: row.Status || 'confirmed',
+                            source: 'import'
+                        };
+
+                        newTransactions.push(tx);
+                        importedCount++;
                     });
-                    imported++;
+                };
+
+                // Attempt to parse known sheets
+                if (workbook.SheetNames.includes('Income')) {
+                    parseSheet('Income', 'income');
+                }
+                if (workbook.SheetNames.includes('Expenses')) {
+                    parseSheet('Expenses', 'expense');
                 }
 
-                alert(`Successfully imported ${imported} transactions!`);
+                // Fallback: If no recognized sheets, try to parse the first sheet as generic
+                if (importedCount === 0 && workbook.SheetNames.length > 0) {
+                    // Assume generic import from first sheet, check 'Type' column
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+                    rows.forEach(row => {
+                        let type = (row.Type || 'expense').toLowerCase();
+                        let dateObj = new Date(); // Simplify date for fallback
+                        // same date parsing logic...
+                        if (row.Date) {
+                            // reuse logic or simplify
+                            dateObj = new Date(row.Date);
+                        }
+
+                        newTransactions.push({
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                            type: type,
+                            amount: parseFloat(row.Amount) || 0,
+                            category: (row.Category || 'other').toLowerCase().replace(/\s+/g, '_'),
+                            description: row.Description || 'Imported',
+                            date: dateObj.toISOString(),
+                            source: 'import_fallback'
+                        });
+                        importedCount++;
+                    });
+                }
+
+                if (importedCount > 0) {
+                    importTransactions(newTransactions);
+                    alert(`✅ Successfully imported ${importedCount} transactions from Excel!`);
+                } else {
+                    alert('⚠️ No valid transactions found in the file. Please ensure it has "Income" and "Expenses" sheets or correct columns.');
+                }
+
             } catch (error) {
-                alert('Error importing file. Please check the format.');
-                console.error(error);
+                console.error('Import Error:', error);
+                alert('❌ Error processing file. Please check the content.');
             }
         };
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
         e.target.value = ''; // Reset input
     };
 
-    const handleLinkAccount = (type, value) => {
-        if (!value.trim()) return;
-        setLinkedAccounts(prev => ({
-            ...prev,
-            [type]: { linked: true, id: value }
-        }));
-    };
 
-    const handleUnlinkAccount = (type) => {
-        if (confirm(`Unlink this ${type.toUpperCase()} account? Auto-tracking will stop.`)) {
-            setLinkedAccounts(prev => ({
-                ...prev,
-                [type]: { linked: false, id: '' }
-            }));
-        }
-    };
 
     const handleAddCategory = () => {
         if (!newCategory.name.trim()) return;
@@ -233,6 +303,19 @@ export default function Settings() {
         }
     };
 
+    const handleAddBudget = () => {
+        if (!newBudget.categoryName.trim()) return;
+        addBudget(null, newBudget.categoryName);
+        setNewBudget({ categoryName: '', limit: 5000 });
+        setShowAddBudget(false);
+    };
+
+    const handleDeleteBudget = (budgetId) => {
+        if (confirm('Delete this budget limit?')) {
+            deleteBudget(budgetId);
+        }
+    };
+
     const expenseCategories = categories.filter(c => c.type === 'expense');
     const incomeCategories = categories.filter(c => c.type === 'income');
 
@@ -251,17 +334,17 @@ export default function Settings() {
                         <div className="setting-info">
                             <span className="setting-label">Theme</span>
                             <span className="setting-description">
-                                {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                                {settings.theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                             </span>
                         </div>
                         <button
-                            className={`theme-toggle ${theme}`}
+                            className={`theme-toggle ${settings.theme}`}
                             onClick={toggleTheme}
-                            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                            title={`Switch to ${settings.theme === 'dark' ? 'light' : 'dark'} mode`}
                         >
                             <span className="theme-toggle-track">
                                 <span className="theme-toggle-thumb">
-                                    {theme === 'dark' ? '🌙' : '☀️'}
+                                    {settings.theme === 'dark' ? '🌙' : '☀️'}
                                 </span>
                             </span>
                         </button>
@@ -269,76 +352,7 @@ export default function Settings() {
                 </div>
             </div>
 
-            {/* Bank & UPI Linking */}
-            <div className="settings-section">
-                <div className="section-header">
-                    <span className="section-icon">🏦</span>
-                    <span className="section-title">Account Linking</span>
-                </div>
-                <div className="settings-list">
-                    {/* UPI */}
-                    <div className="setting-item column">
-                        <div className="setting-info">
-                            <span className="setting-label">Unified Payments Interface (UPI)</span>
-                            <span className="setting-description">
-                                Link UPI ID for auto-tracking
-                            </span>
-                        </div>
-                        {linkedAccounts.upi.linked ? (
-                            <div className="linked-status">
-                                <span className="status-badge success">✅ Connected</span>
-                                <span className="linked-id">{linkedAccounts.upi.id}</span>
-                                <button
-                                    className="unlink-btn"
-                                    onClick={() => handleUnlinkAccount('upi')}
-                                >
-                                    Unlink
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="link-input-group">
-                                <input
-                                    type="text"
-                                    placeholder="Enter UPI ID (e.g., name@okicici)"
-                                    className="link-input"
-                                    onBlur={(e) => handleLinkAccount('upi', e.target.value)}
-                                />
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Bank Account */}
-                    <div className="setting-item column">
-                        <div className="setting-info">
-                            <span className="setting-label">Bank Account</span>
-                            <span className="setting-description">
-                                Link Bank Account for SMS tracking
-                            </span>
-                        </div>
-                        {linkedAccounts.bank.linked ? (
-                            <div className="linked-status">
-                                <span className="status-badge success">✅ Connected</span>
-                                <span className="linked-id">Account ending in {linkedAccounts.bank.id.slice(-4)}</span>
-                                <button
-                                    className="unlink-btn"
-                                    onClick={() => handleUnlinkAccount('bank')}
-                                >
-                                    Unlink
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="link-input-group">
-                                <input
-                                    type="text"
-                                    placeholder="Enter Account Number"
-                                    className="link-input"
-                                    onBlur={(e) => handleLinkAccount('bank', e.target.value)}
-                                />
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             {/* Categories Section */}
             <div className="settings-section">
@@ -423,19 +437,59 @@ export default function Settings() {
                     <div className="category-list-items">
                         {incomeCategories.map(cat => (
                             <div key={cat.id} className="category-card income">
-                                <div className="category-card-header">
+                                <div
+                                    className="category-card-header"
+                                    onClick={() => setExpandedCategory(expandedCategory === cat.id ? null : cat.id)}
+                                >
                                     <span className="category-icon-large">{cat.icon}</span>
                                     <div className="category-card-info">
                                         <span className="category-card-name">{cat.name}</span>
+                                        <span className="subcategory-count">
+                                            {cat.subcategories?.length || 0} subcategories
+                                        </span>
                                     </div>
-                                    <button
-                                        className="delete-cat-btn"
-                                        onClick={() => handleDeleteCategory(cat.id)}
-                                        title="Delete category"
-                                    >
-                                        ×
-                                    </button>
+                                    <div className="category-card-actions">
+                                        <button
+                                            className="add-sub-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowAddSubcategory(cat.id);
+                                                setNewSubcategory({ name: '', icon: cat.icon });
+                                            }}
+                                            title="Add subcategory"
+                                        >
+                                            +
+                                        </button>
+                                        <button
+                                            className="delete-cat-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteCategory(cat.id);
+                                            }}
+                                            title="Delete category"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {/* Subcategories */}
+                                {expandedCategory === cat.id && cat.subcategories?.length > 0 && (
+                                    <div className="subcategory-list">
+                                        {cat.subcategories.map(sub => (
+                                            <div key={sub.id} className="subcategory-item">
+                                                <span className="subcategory-icon">{sub.icon}</span>
+                                                <span className="subcategory-name">{sub.name}</span>
+                                                <button
+                                                    className="delete-sub-btn"
+                                                    onClick={() => deleteSubcategory(cat.id, sub.id)}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -479,6 +533,12 @@ export default function Settings() {
                 <div className="section-header">
                     <span className="section-icon">💰</span>
                     <span className="section-title">Monthly Budget Limits</span>
+                    <button
+                        className="add-category-btn"
+                        onClick={() => setShowAddBudget(true)}
+                    >
+                        + Add
+                    </button>
                 </div>
                 <div className="budget-list">
                     {budgets.map(budget => (
@@ -499,6 +559,14 @@ export default function Settings() {
                                     min="0"
                                     step="500"
                                 />
+                                <button
+                                    className="delete-cat-btn"
+                                    onClick={() => handleDeleteBudget(budget.id)}
+                                    title="Delete budget"
+                                    style={{ marginLeft: '8px' }}
+                                >
+                                    ×
+                                </button>
                             </div>
                         </div>
                     ))}

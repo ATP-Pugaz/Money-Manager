@@ -156,14 +156,22 @@ export const defaultCategories = [
         name: 'Salary',
         icon: '💰',
         type: 'income',
-        subcategories: []
+        subcategories: [
+            { id: '7a', name: 'Monthly', icon: '🗓️' },
+            { id: '7b', name: 'Bonus', icon: '🎉' },
+            { id: '7c', name: 'Reimbursement', icon: '📎' }
+        ]
     },
     {
         id: '8',
         name: 'Freelance',
         icon: '💻',
         type: 'income',
-        subcategories: []
+        subcategories: [
+            { id: '8a', name: 'Project', icon: '📁' },
+            { id: '8b', name: 'Upwork', icon: '🌐' },
+            { id: '8c', name: 'Hourly', icon: '⏱️' }
+        ]
     },
     {
         id: '9',

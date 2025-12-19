@@ -5,6 +5,7 @@
     flex-direction: column;
     gap: 20px;
     animation: fade-in 0.3s ease;
+    padding-bottom: 100px;
 }
 
 .calendar-title {
@@ -20,6 +21,7 @@
     border-radius: var(--radius-lg);
     padding: 20px;
     border: 1px solid rgba(0, 188, 212, 0.15);
+    box-shadow: var(--shadow-md);
 }
 
 .full-calendar-header {
@@ -35,11 +37,6 @@
     color: var(--sky-blue);
 }
 
-.calendar-nav-buttons {
-    display: flex;
-    gap: 8px;
-}
-
 .calendar-nav-btn {
     width: 36px;
     height: 36px;
@@ -50,6 +47,8 @@
     background: var(--tertiary-bg);
     color: var(--text-secondary);
     transition: all var(--transition-normal);
+    cursor: pointer;
+    border: none;
 }
 
 .calendar-nav-btn:hover {
@@ -63,6 +62,7 @@
     height: 18px;
 }
 
+/* Calendar Grid */
 .full-calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -78,6 +78,7 @@
     border-bottom: 1px solid var(--tertiary-bg);
 }
 
+/* Calendar Day Cell */
 .full-calendar-day {
     aspect-ratio: 1;
     display: flex;
@@ -93,14 +94,12 @@
     background: var(--secondary-bg);
     color: var(--text-primary);
     border: 2px solid transparent;
-    min-height: 60px;
+    min-height: 50px;
 }
 
-.full-calendar-day:hover:not(.empty):not(.other-month) {
-    background: rgba(0, 188, 212, 0.15);
-    border-color: var(--sky-blue);
-    transform: scale(1.02);
-    box-shadow: var(--glow-sm);
+.full-calendar-day.empty {
+    background: transparent;
+    cursor: default;
 }
 
 .full-calendar-day.other-month {
@@ -109,13 +108,21 @@
     background: transparent;
 }
 
+.full-calendar-day:hover:not(.empty):not(.other-month) {
+    background: rgba(0, 188, 212, 0.15);
+    border-color: rgba(0, 188, 212, 0.3);
+}
+
 .full-calendar-day.today {
     background: rgba(0, 188, 212, 0.25);
     border: 2px solid var(--bright-blue);
-    color: var(--bright-blue);
     font-weight: 700;
     box-shadow: var(--glow-md);
     animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.full-calendar-day.today .day-number {
+    color: var(--bright-blue);
 }
 
 .full-calendar-day.selected {
@@ -130,11 +137,13 @@
     font-size: 1rem;
 }
 
+/* Day Indicators */
 .day-indicators {
     display: flex;
     gap: 3px;
     position: absolute;
     bottom: 6px;
+    justify-content: center;
 }
 
 .day-indicator {
@@ -174,6 +183,7 @@
     z-index: 100;
     animation: fade-in 0.15s ease;
     margin-bottom: 8px;
+    pointer-events: none;
 }
 
 .day-tooltip::after {
@@ -215,6 +225,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid var(--tertiary-bg);
+    padding-bottom: 12px;
 }
 
 .close-detail-btn {
@@ -229,6 +241,7 @@
     font-size: 1.25rem;
     cursor: pointer;
     transition: all var(--transition-fast);
+    border: none;
 }
 
 .close-detail-btn:hover {
@@ -236,6 +249,7 @@
     color: var(--danger);
 }
 
+/* Day Totals */
 .day-totals {
     display: flex;
     gap: 20px;
@@ -271,6 +285,65 @@
 
 .day-total-amount.net {
     color: var(--sky-blue);
+}
+
+/* Transaction List in Calendar */
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--secondary-bg);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border-left: 3px solid transparent;
+}
+
+.transaction-icon {
+    font-size: 1.5rem;
+    margin-right: 12px;
+}
+
+.transaction-details {
+    flex: 1;
+}
+
+.transaction-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.transaction-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.transaction-source {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 188, 212, 0.1);
+    color: var(--sky-blue);
+}
+
+.transaction-amount {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.transaction-amount.income {
+    color: var(--success);
+}
+
+.transaction-amount.expense {
+    color: var(--danger);
 }
 
 /* Calendar Stats */
@@ -336,13 +409,85 @@
     background: var(--warning);
 }
 
+/* Mobile Responsive */
 @media (max-width: 480px) {
+    .full-calendar {
+        padding: 12px;
+    }
+
+    .full-calendar-grid {
+        gap: 4px;
+    }
+
     .full-calendar-day {
-        min-height: 50px;
+        min-height: 44px;
         font-size: 0.9rem;
+    }
+
+    .day-indicators {
+        bottom: 3px;
+        gap: 2px;
+    }
+
+    .day-indicator {
+        width: 3px;
+        height: 3px;
     }
 
     .calendar-stats {
         grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .calendar-stat-card {
+        padding: 12px 8px;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .day-tooltip {
+        display: none !important;
+    }
+
+    .day-totals {
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .day-total-amount {
+        font-size: 1rem;
+    }
+}
+
+/* Animations */
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow-pulse {
+
+    0%,
+    100% {
+        box-shadow: var(--glow-md);
+        filter: brightness(1);
+    }
+
+    50% {
+        box-shadow: var(--glow-xl);
+        filter: brightness(1.2);
     }
 }

@@ -54,34 +54,44 @@
   --radius-full: 50%;
 }
 
-/* Light Theme */
+/* Light Theme - White & Red Neon */
 [data-theme="light"] {
-  --primary-bg: #f8f9fa;
-  --secondary-bg: #ffffff;
-  --tertiary-bg: #e9ecef;
+  /* Crisp White Backgrounds */
+  --primary-bg: #ffffff;
+  --secondary-bg: #fafafa;
+  --tertiary-bg: #f0f0f0;
   --card-bg: #ffffff;
 
-  /* Enhanced Sky Blue for Light Mode */
-  --sky-blue: #0097a7;
-  --bright-blue: #00bcd4;
-  --light-blue: #26c6da;
-  --dark-blue: #00796b;
+  /* Vibrant Red Neon Accents */
+  --sky-blue: #ff0033;
+  /* Primary Neon Red */
+  --bright-blue: #ff1a4d;
+  /* Bright Red */
+  --light-blue: #ff4d79;
+  /* Light Red/Pink */
+  --dark-blue: #cc0029;
+  /* Dark Red */
 
-  /* Text Colors for Light Mode */
-  --text-primary: #1a1a1a;
-  --text-secondary: #555555;
-  --text-muted: #888888;
+  /* Sharp Text Colors */
+  --text-primary: #0a0a0a;
+  --text-secondary: #3a3a3a;
+  --text-muted: #666666;
 
-  /* Enhanced Lightning Glow Effects */
-  --glow-sm: 0 0 10px rgba(0, 151, 167, 0.4), 0 0 20px rgba(0, 188, 212, 0.2);
-  --glow-md: 0 0 16px rgba(0, 151, 167, 0.5), 0 0 32px rgba(0, 188, 212, 0.3);
-  --glow-lg: 0 0 24px rgba(0, 151, 167, 0.6), 0 0 48px rgba(0, 188, 212, 0.4);
-  --glow-xl: 0 0 32px rgba(0, 151, 167, 0.7), 0 0 64px rgba(0, 188, 212, 0.5);
+  /* Enhanced Neon Red Glow Effects */
+  --glow-sm: 0 0 12px rgba(255, 0, 51, 0.5), 0 0 24px rgba(255, 26, 77, 0.3);
+  --glow-md: 0 0 20px rgba(255, 0, 51, 0.6), 0 0 40px rgba(255, 26, 77, 0.4);
+  --glow-lg: 0 0 30px rgba(255, 0, 51, 0.7), 0 0 60px rgba(255, 26, 77, 0.5);
+  --glow-xl: 0 0 40px rgba(255, 0, 51, 0.8), 0 0 80px rgba(255, 26, 77, 0.6);
 
-  /* Lighter Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+  /* Subtle Red-tinted Shadows */
+  --shadow-sm: 0 2px 8px rgba(255, 0, 51, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(255, 0, 51, 0.18), 0 2px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(255, 0, 51, 0.24), 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  /* Success/Danger colors for light mode */
+  --success: #00c853;
+  --danger: #ff0033;
+  --warning: #ff9100;
 }
 
 /* ===== Reset & Base ===== */
